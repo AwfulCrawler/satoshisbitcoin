@@ -38,7 +38,7 @@ If you continue to use your existing client, you will continue to use the existi
 Is this client ready?
 ----------------
 
-No. Most development items still need to be completed, but they are relatively straight forward and should be done by the fork date. The work needed is listed below and open to community development. 
+Yes! Intial coding work is complete and several tests have been performed to demonstrate that the client can run on the main net, fork at a specific height, and start to build a new chain using a new block height and POW. Additional development to create a new seed peer list is needed and described below, but all the core functionality needed has been completed.
 
 How will the block size limit be changed?
 ----------------
@@ -67,12 +67,7 @@ Changing the POW algorithm also brings back home hobbyist mining, which was a si
 Which POW will be used?
 ----------------
 
-There are two options being considered. One option is to select an existing algorithm that has proven with alt-coins to be ASIC-resistant. ETH is using one such algorithm and may be selected. Another option is to create a new algorithm that improves on existing attempts, as described below. 
-
-If a new algorithm cannot be designed on time the first option will be selected, however if a new algorithm can be finalized in time that will be an option for consideration. 
-
-If the new algorithm option is selected, what will it be?
-----------------
+A modified version of scrypt was created and used. 
 
 The overall goal is to take an existing algorithm, and make minor and easy adjustments that significantly reduce the effectiveness of ASIC or GPU implementations. We should still see specialization happen over time, but the optimal point should still create a more balanced environment. 
 
@@ -82,9 +77,9 @@ Based prior experience in creating ASIC and FPGA hardware implementations of exi
 
 The goal of scrypt is to force off-chip communication by using more data than can fit onto a single chip. The problem with the Litecoin implementation is the data size selected was much too small and it was possible to develop ASIC cores that required no off-chip communication. 
 
-- Select 1GB as an initial data set size for scrypt 
+- Select 128MB as an initial data set size for scrypt 
 
-1GB is well in excess of what can fit on a CMOS chip for the foreseeable future and still is reasonable for mid-range clients (cell phones, etc) to process. This number could be set to double every 5 or 10 years. This number can be debated but serves as an initial starting point.
+128MB is well in excess of what can economically fit on a CMOS chip for the foreseeable future and still is reasonable for mid-range clients (cell phones, etc) to process. This number could be set to double every 5 or 10 years. This number can be debated but serves as an initial starting point.
 
 - Change the algorithm to randomize data read from memory
 
@@ -94,31 +89,32 @@ By randomizing the next data element to process, it is not possible to create an
 
 By performing different code paths on different data packets it is not possible to process data packets in parallel. This makes not just ASIC implementations inefficient, but GPU implementations inefficient as well.
 
+The src/crypto directory contains the code and a detailed explaination/walkthrough. Please review and comment.
+
 What work has been completed?
 ----------------
 
-Not much in this initial release. The following changes have been made over Bitcoin Classic 0.11.2
+The initial release is work and has been tested to successfully fork off of the main net, switch to a new blocksize and POW and build a new independent chain. The repo was forked from Bitcoin Classic 0.11.2 and all changes can be compared to that version.
 
 - The block height for the fork has been set to 407232
-- The block size post-fork has been fixed to 2MB
-- The difficulty adjustment at the fork point is re-set to 1. This is needed because the mining hash rate is unknown, by re-setting the hash rate the branch will effectively work with a small amount of hash power and then self adjust to match the real hash rate the market brings. 
+- The block size post-fork has been set to 2MB (will follow Classic)
+- The difficulty adjustment at the fork point is re-set to a value where a smallish number of nodes would create blocks every 10 minutes. This is needed because the mining hash rate is unknown, by re-setting the hash rate the branch will effectively work with a small amount of hash power and then self adjust to match the real hash rate the market brings. 
+- A new block version needs to be created for the fork. At the fork point only blocks with this version or higher will be accepted and this version tage will be used in block verification to select the new block size and POW. This approach simplifies coding effort. 
+- The new POW algorithm was implemented in the crypto library 
+- The new POW algorithm activates at the fork height by using the new version tag to select which algorithm
+- Due to how long the new hash algorithm takes (~1 sec) a caching method was implemented to save previous block hashes. This prevents wasting compute on a hash that was already performed.
 
 What work still needs to be done?
 ----------------
 
-Quite a bit. This is the list of items I think need to be done, but it is likely there are more items. I plan to work on this as able given current commitments but doubt it can be done by mid-April. If you are interested and able to contribute to making this fork happen, that is great.
-
-- A new block version needs to be created for the fork. At the fork point only blocks with this version or higher will be accepted and this version tage will be used in block verification to select the new block size and POW. This approach simplifies coding effort. 
-- The block size limit needs to be changed from a fixed limit to the auto-adjusting limit
-- The new POW algorithm (either existing or newly developed) needs to be implemented in the crypto library 
-- The new POW algorithm needs to activate at the fork height. 
-- The client name needs to be changed from Bitcoin Classic to Satoshi’s Vision 
-- The list of peers to initially search for needs to be recreated. Otherwise on startup the client will only connect to nodes on the existing branch and not nodes using the new branch. 
-- More? 
-
-If other items need to be done, please submit a pull request to this README and add it to the list.
+The only additional coding work needed is to create mechanisms to change to a new group of peers. After the fork the client needs to both drop peers not following the fork and to find peers using the new fork. This also requires setting up a new CDNSSeedData server to provide seed nodes that followed the fork. 
 
 After the fork what is the long term roadmap?
 ----------------
 
 This client will follow developments that enable scaling Bitcoin to a large number of transactions so that as many people can use Bitcoin directly as possible. This includes expected developments that reduce block propogation times such as thin blocks, IBLT and sub-chains, amoung others.
+
+Who will control this repo?
+----------------
+
+I will maintain control initial but would like to pass off control to established Bitcoin developers who have shown they want to follow the direction in Satoshi's white paper. If this fork is successful and these developers want to take over, I will be happy to pass control back to the early developers who make Bitcoin what it is today and who have refused to follow Blockstream's limited direction.
