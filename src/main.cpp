@@ -2863,6 +2863,12 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
     int nHeight = pindexPrev->nHeight+1;
 
+    // After the fork height reject block.nVersion < 256 and nVersion > 512 (reject other soft fork blocks such as Classic 
+    //   or other full fork versions )
+    if ( (unsigned int)nHeight >= HEIGHT_TO_FULL_FORK_1 && (block.nVersion < FULL_FORK_VERSION || block.nVersion > FULL_FORK_VERSION_MAX) )
+        return state.Invalid(error("%s : rejected older block.nVersion != 256 after Satoshi's Bitcoin full fork", __func__),
+                             REJECT_OBSOLETE, "bad-version");
+
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
         return state.DoS(100, error("%s: incorrect proof of work of %08x should be %08x", __func__, block.nBits, GetNextWorkRequired(pindexPrev, &block, consensusParams)),
@@ -2899,12 +2905,6 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     // Reject block.nVersion=3 blocks when 95% (75% on testnet) of the network has upgraded:
     if (block.nVersion < 4 && IsSuperMajority(4, pindexPrev, consensusParams.nMajorityRejectBlockOutdated, consensusParams))
         return state.Invalid(error("%s : rejected nVersion=3 block", __func__),
-                             REJECT_OBSOLETE, "bad-version");
-
-    // After the fork height reject block.nVersion < 5 and nVersion > 15 (reject other soft fork blocks such as Classic 
-    //   or other full fork versions )
-    if ( (unsigned int)nHeight >= HEIGHT_TO_FULL_FORK_1 && (block.nVersion < 5 || block.nVersion > 15) )
-        return state.Invalid(error("%s : rejected nVersion!=5 block after Satoshi's Bitcoin full fork", __func__),
                              REJECT_OBSOLETE, "bad-version");
 
     return true;
@@ -5315,7 +5315,7 @@ unsigned int MaxBlockSize(int32_t nVersion)
     //    return OLD_MAX_BLOCK_SIZE;
     // return MAX_BLOCK_SIZE;
   
-    if ((uint32_t)nVersion < FULL_FORK_VERSION)
+    if (nVersion < FULL_FORK_VERSION || nVersion > FULL_FORK_VERSION_MAX)
         return OLD_MAX_BLOCK_SIZE;
     return MAX_BLOCK_SIZE;
   
@@ -5328,7 +5328,7 @@ unsigned int MaxBlockSigops(int32_t nVersion)
     //    return std::numeric_limits<uint32_t>::max(); // Use old way of counting
     //return MAX_BLOCK_SIGOPS;
   
-    if ((uint32_t)nVersion < FULL_FORK_VERSION)
+    if (nVersion < FULL_FORK_VERSION || nVersion > FULL_FORK_VERSION_MAX)
         return std::numeric_limits<uint32_t>::max(); // Use old way of counting
     return MAX_BLOCK_SIGOPS;
 }
@@ -5339,7 +5339,7 @@ unsigned int MaxBlockSighash(int32_t nVersion)
     //    return std::numeric_limits<uint32_t>::max(); // no limit before
     //return MAX_BLOCK_SIGHASH;
   
-    if ((uint32_t)nVersion < FULL_FORK_VERSION)
+    if (nVersion < FULL_FORK_VERSION || nVersion > FULL_FORK_VERSION_MAX)
         return std::numeric_limits<uint32_t>::max(); // no limit before
     return MAX_BLOCK_SIGHASH;
 }
@@ -5351,7 +5351,7 @@ uint32_t MaxLegacySigops(int32_t nVersion)
     //    return MAX_BLOCK_SIGOPS;
     //return std::numeric_limits<uint32_t>::max(); // Use accurately-counted limit
   
-    if ((uint32_t)nVersion < FULL_FORK_VERSION)
+    if (nVersion < FULL_FORK_VERSION || nVersion > FULL_FORK_VERSION_MAX)
         return MAX_BLOCK_SIGOPS;
     return std::numeric_limits<uint32_t>::max(); // Use accurately-counted limit
 }

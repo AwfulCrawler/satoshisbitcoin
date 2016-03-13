@@ -77,14 +77,15 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
     if ((pindexLast->nHeight+1) == HEIGHT_TO_FULL_FORK_1)
     {
         bnNew = bnPowLimit;
-        LogPrintf("At fork height of %d, resetting difficulty to PowLimit: %08x", (pindexLast->nHeight+1), bnNew.GetCompact());
+        LogPrintf("At fork height of %d, resetting difficulty to PowLimit: %08x\n", (pindexLast->nHeight+1), bnNew.GetCompact());
     }
 
     /// debug print
     LogPrintf("GetNextWorkRequired RETARGET at height %d\n", (pindexLast->nHeight+1) );
-    LogPrintf("params.nPowTargetTimespan = %d    nActualTimespan = %d\n", params.nPowTargetTimespan, nActualTimespan);
-    LogPrintf("Before: %08x  %s\n", pindexLast->nBits, bnOld.ToString());
-    LogPrintf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.ToString());
+    LogPrintf("params.nPowTargetTimespan = %d    nActualTimespan = %d    Before = %08x    After = %08x\n", 
+	       params.nPowTargetTimespan, nActualTimespan, pindexLast->nBits, bnNew.GetCompact());
+    //LogPrintf("Before: %08x  %s\n", pindexLast->nBits, bnOld.ToString());
+    //LogPrintf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.ToString());
 
     return bnNew.GetCompact();
 }

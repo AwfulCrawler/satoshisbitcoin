@@ -28,7 +28,7 @@ uint256 CBlockHeader::GetHash(bool useCache) const
     uint32_t * keyBegin, * hashPrevBlockBegin, * hashMerkleRootBegin;
   
     // Use SHA256 if block version indicates legacy PoW
-    if ((uint32_t)nVersion < FULL_FORK_VERSION || nVersion > 15) {
+    if (nVersion < FULL_FORK_VERSION || nVersion > FULL_FORK_VERSION_MAX) {
         return SerializeHash(*this);
     }
     

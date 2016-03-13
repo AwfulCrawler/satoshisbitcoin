@@ -10,10 +10,11 @@
 #include "serialize.h"
 #include "uint256.h"
 
-const uint32_t BIP_009_MASK       = 0x20000000;
-const uint32_t BASE_VERSION       = 0x20000000;  // Will accept 2MB blocks
-const uint32_t FORK_BIT_2MB       = 0x10000000;  // Vote for 2MB fork
-const uint32_t FULL_FORK_VERSION  = 5;           // Satoshi's Bitcoin full fork version tag
+const uint32_t BIP_009_MASK           = 0x20000000;
+const uint32_t BASE_VERSION           = 0x20000000;  // Will accept 2MB blocks
+const uint32_t FORK_BIT_2MB           = 0x10000000;  // Vote for 2MB fork
+const int32_t  FULL_FORK_VERSION      = 256;         // Satoshi's Bitcoin full fork version tag
+const int32_t  FULL_FORK_VERSION_MAX  = 512;         //   Max valid version at fork point, used to reject other soft forks
 const bool DEFAULT_2MB_VOTE = false;
 
 /** Nodes collect new transactions into a block, hash them into a hash tree,
