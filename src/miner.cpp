@@ -531,6 +531,7 @@ void static BitcoinMiner(CWallet *pwallet, int threadNum)
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
+            LogPrintf("BitcoinMiner %d: Creating new block\n", threadNum );
             auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
             if (!pblocktemplate.get())
             {
