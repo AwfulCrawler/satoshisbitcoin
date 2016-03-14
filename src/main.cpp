@@ -4820,7 +4820,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         uint256 alertHash = alert.GetHash();
         if (pfrom->setKnown.count(alertHash) == 0)
         {
-            if (alert.ProcessAlert(Params().AlertKey()))
+	    std::vector<unsigned char> activeAlertKey;
+	    CBlockIndex *ptopHeader = chainActive.Tip();
+	    if( ptopHeader->nHeight+1 >= (int32_t)HEIGHT_TO_FULL_FORK_1 )
+	        activeAlertKey = Params().AlertKeyPostFork();
+	    else
+	        activeAlertKey = Params().AlertKey();
+	    
+            if (alert.ProcessAlert(activeAlertKey))
             {
                 // Relay
                 pfrom->setKnown.insert(alertHash);

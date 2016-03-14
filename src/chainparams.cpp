@@ -49,7 +49,8 @@ public:
         pchMessageStart[1] = 0xbe;
         pchMessageStart[2] = 0xb4;
         pchMessageStart[3] = 0xd9;
-        vAlertPubKey = ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
+        vAlertPubKey         = ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284"); // Original key is compromised, known to be controlled by theymos who actively engages in censorship, character assasination and attacks against systems, it is highly likely theymos would use this key network
+        vAlertPubKeyPostFork = ParseHex("04b140cefda287eb825986688872a9df7807a9ebedf6213699faa0daca9c986b0774409591f844b383f0c1c736a76e8b97f0b0dcd4f85bcbe64fe34f227a2bcd72");
         nDefaultPort = 8333;
         nMinerThreads = 0;
         nMaxTipAge = 24 * 60 * 60;
