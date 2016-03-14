@@ -1130,18 +1130,24 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 delete pcoinscatcher;
                 delete pblocktree;
 
+                uiInterface.InitMessage(_("new CBlockTreeDB(nBlockTreeDBCache, false, fReindex)..."));
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
+                uiInterface.InitMessage(_("new CCoinsViewDB(nCoinDBCache, false, fReindex)..."));
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex);
+                uiInterface.InitMessage(_("new CCoinsViewErrorCatcher(pcoinsdbview)..."));
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
+                uiInterface.InitMessage(_("new CCoinsViewCache(pcoinscatcher)..."));
                 pcoinsTip = new CCoinsViewCache(pcoinscatcher);
 
                 if (fReindex) {
+                    uiInterface.InitMessage(_("pblocktree->WriteReindexing(true)..."));
                     pblocktree->WriteReindexing(true);
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
                     if (fPruneMode)
                         CleanupBlockRevFiles();
                 }
 
+                uiInterface.InitMessage(_("LoadBlockIndex()..."));
                 if (!LoadBlockIndex()) {
                     strLoadError = _("Error loading block database");
                     break;
@@ -1149,10 +1155,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
                 // If the loaded chain has a wrong genesis, bail out immediately
                 // (we're likely using a testnet datadir, or the other way around).
+                uiInterface.InitMessage(_("mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock)..."));
                 if (!mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0)
                     return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
 
                 // Initialize the block index (no-op if non-empty database was already loaded)
+                uiInterface.InitMessage(_("InitBlockIndex()..."));
                 if (!InitBlockIndex()) {
                     strLoadError = _("Error initializing block database");
                     break;

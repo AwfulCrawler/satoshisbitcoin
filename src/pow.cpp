@@ -48,6 +48,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     const CBlockIndex* pindexFirst = pindexLast->GetAncestor(nHeightFirst);
     assert(pindexFirst);
 
+    LogPrintf("RETARGETING with: First block %d at time %d - Last block %d at time %d\n",
+               pindexFirst->nHeight, pindexFirst->GetBlockTime(), pindexLast->nHeight, pindexLast->GetBlockTime() );
+
     return CalculateNextWorkRequired(pindexLast, pindexFirst->GetBlockTime(), params);
 }
 
@@ -56,10 +59,11 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
     // Limit adjustment step
     int64_t nActualTimespan = pindexLast->GetBlockTime() - nFirstBlockTime;
     LogPrintf("  nActualTimespan = %d  before bounds\n", nActualTimespan);
-    if (nActualTimespan < params.nPowTargetTimespan/4)
-        nActualTimespan = params.nPowTargetTimespan/4;
-    if (nActualTimespan > params.nPowTargetTimespan*4)
-        nActualTimespan = params.nPowTargetTimespan*4;
+    if (nActualTimespan < params.nPowTargetTimespan/16)
+        nActualTimespan = params.nPowTargetTimespan/16;
+    if (nActualTimespan > params.nPowTargetTimespan*16)
+        nActualTimespan = params.nPowTargetTimespan*16;
+    LogPrintf("  nActualTimespan = %d  after bounds\n", nActualTimespan);
 
     // Retarget
     const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
