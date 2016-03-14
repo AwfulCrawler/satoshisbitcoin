@@ -167,7 +167,7 @@ uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL
 }
 
 /** Compute the Modified Scrypt hash of a block header object */
-uint256 HashModifiedScrypt(const CBlockHeader *obj);
+uint256 HashModifiedScrypt(const CBlockHeader *obj, void *_V0);
 
 unsigned int MurmurHash3(unsigned int nHashSeed, const std::vector<unsigned char>& vDataToHash);
 

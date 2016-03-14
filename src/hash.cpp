@@ -14,9 +14,18 @@
 static void * V0 = NULL;
 
 
-uint256 HashModifiedScrypt(const CBlockHeader *obj)
+uint256 HashModifiedScrypt(const CBlockHeader *obj, void *_V0)
 {
     uint256 returnBuffer;
+    
+    // If provided a V0 memory buffer the hash can be processed concurrently with others, this is done by miner threads
+    if( _V0 != NULL ) {
+        crypto_1M_1_1_256_scrypt( (uint8_t *)(BEGIN(obj->nVersion)), 80, _V0, (uint8_t *)(BEGIN(returnBuffer)), 32 );
+        return returnBuffer;
+    }
+    
+    // No memory buffer provided, create a common shared memory buffer and serialize access
+    // This version is used by general non-miner threads which usually call GetHash serially already
     
     static CCriticalSection csHashModifiedScrypt;    // Only one block hash at a time due to avoid out-of-memory on lighter nodes
     LOCK( csHashModifiedScrypt );

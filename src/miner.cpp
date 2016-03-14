@@ -402,7 +402,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 // nonce is 0xffff0000 or above, the block is rebuilt and nNonce starts over at
 // zero.
 //
-bool static ScanHash(CBlockHeader *pblock, uint32_t& nNonce, uint256 *phash, arith_uint256 hashTarget)
+bool static ScanHash(CBlockHeader *pblock, uint32_t& nNonce, uint256 *phash, arith_uint256 hashTarget, void *V0)
 {
     // Write the first 76 bytes of the block header to a double-SHA256 state.
     //CHash256 hasher;
@@ -418,7 +418,7 @@ bool static ScanHash(CBlockHeader *pblock, uint32_t& nNonce, uint256 *phash, ari
         // the double-SHA256 state, and compute the result.
         //CHash256(hasher).Write((unsigned char*)&nNonce, 4).Finalize((unsigned char*)phash);
 	pblock->nNonce = nNonce;
-	*phash = pblock->GetHash(false);
+	*phash = pblock->GetHash(false, V0);
         //LogPrintf("ScanHash() - nNonce %d - Computed - %llu\n", nNonce, *((uint64_t*)phash) );
 
         // Return the nonce if the hash has at least some zero bits,
@@ -430,7 +430,7 @@ bool static ScanHash(CBlockHeader *pblock, uint32_t& nNonce, uint256 *phash, ari
 
         // If nothing found after trying for 16 hashes return failed, rebuild a new block and try again
 	// Using smalling number of hashes to try at once due to longer hashing times
-        if ( (nNonce & 0x0000000f) == 0)
+        if ( (nNonce & 0x00000007) == 0)
             return false;
 	
 	// Stop if the shutdown flag is set 
@@ -491,8 +491,21 @@ void static BitcoinMiner(CWallet *pwallet, int threadNum)
     // Each thread has its own key and counter
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
+    
+    // Each thread has it's own memory space to prevent contention and prevent allocating memory on each hash call
+    void * V0 = NULL;
 
     try {
+        if( V0 == NULL ) {
+            V0 = malloc(128 * 1024 * 1024 + 63);
+            LogPrintf("BitcoinMiner %d: Allocated 128MB at %p\n", threadNum, V0);
+	    if( V0 == NULL ) {
+                LogPrintf("BitcoinMiner %d: Error in HashModifiedScrypt: Out of memory, cannot not allocate 128MB for modified scrypte hashing\n", threadNum);
+                throw std::runtime_error("BitcoinMiner(): Out of memory");
+	    }
+        }
+    
+
         while (true) {
             if (chainparams.MiningRequiresPeers()) {
                 // Busy-wait for the network to come online so we don't waste time mining
@@ -545,7 +558,7 @@ void static BitcoinMiner(CWallet *pwallet, int threadNum)
             uint32_t nNonce = 0;
             while (true) {
                 // Check if something found
-                if (ScanHash(pblock, nNonce, &hash, hashTarget))
+                if (ScanHash(pblock, nNonce, &hash, hashTarget, V0))
                 {
                     if (UintToArith256(hash) <= hashTarget)
                     {
@@ -593,14 +606,26 @@ void static BitcoinMiner(CWallet *pwallet, int threadNum)
                 }
             }
         }
+        if( V0 != NULL ) {
+            free(V0);
+	    V0 = NULL;
+        }
     }
     catch (const boost::thread_interrupted&)
     {
+        if( V0 != NULL ) {
+            free(V0);
+            V0 = NULL;
+        }
         LogPrintf("BitcoinMiner %d: Terminated\n", threadNum);
         throw;
     }
     catch (const std::runtime_error &e)
     {
+        if( V0 != NULL ) {
+            free(V0);
+            V0 = NULL;
+        }
         LogPrintf("BitcoinMiner %d: Runtime error: %s\n", threadNum, e.what());
         return;
     }

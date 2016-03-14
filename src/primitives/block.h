@@ -70,7 +70,7 @@ public:
         return (nBits == 0);
     }
 
-    uint256 GetHash(bool useCache = true) const;
+    uint256 GetHash(bool useCache = true, void * V0 = NULL) const;
 
     int64_t GetBlockTime() const
     {

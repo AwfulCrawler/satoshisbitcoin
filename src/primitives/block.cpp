@@ -15,7 +15,7 @@
 static std::map<uint256,uint256> hashCache;    // A cache of past modified scrypt hashes performed
 
 
-uint256 CBlockHeader::GetHash(bool useCache) const
+uint256 CBlockHeader::GetHash(bool useCache, void * V0) const
 {
     //LogPrintf("GetHash(): nVersion      %d\n", nVersion);
     //LogPrintf("           hashPrevBlock %llu\n", *((uint64_t *)&hashPrevBlock) );
@@ -58,7 +58,7 @@ uint256 CBlockHeader::GetHash(bool useCache) const
     }
     
     // No cache hit, compute the hash
-    returnHash = HashModifiedScrypt(this);
+    returnHash = HashModifiedScrypt(this, V0);
     
     // Store the hash in the cache
     if( useCache ) {
