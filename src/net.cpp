@@ -33,7 +33,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
-// Dump addresses to peers.dat every 15 minutes (900s)
+// Dump addresses to forked_peers.dat every 15 minutes (900s)
 #define DUMP_ADDRESSES_INTERVAL 900
 
 #if !defined(HAVE_MSG_NOSIGNAL) && !defined(MSG_NOSIGNAL)
@@ -1183,7 +1183,7 @@ void DumpAddresses()
     CAddrDB adb;
     adb.Write(addrman);
 
-    LogPrint("net", "Flushed %d addresses to peers.dat  %dms\n",
+    LogPrint("net", "Flushed %d addresses to forked_peers.dat  %dms\n",
            addrman.size(), GetTimeMillis() - nStart);
 }
 
@@ -1631,14 +1631,14 @@ void static Discover(boost::thread_group& threadGroup)
 void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
     uiInterface.InitMessage(_("Loading addresses..."));
-    // Load addresses for peers.dat
+    // Load addresses for forked_peers.dat
     int64_t nStart = GetTimeMillis();
     {
         CAddrDB adb;
         if (!adb.Read(addrman))
-            LogPrintf("Invalid or missing peers.dat; recreating\n");
+            LogPrintf("Invalid or missing forked_peers.dat; recreating\n");
     }
-    LogPrintf("Loaded %i addresses from peers.dat  %dms\n",
+    LogPrintf("Loaded %i addresses from forked_peers.dat  %dms\n",
            addrman.size(), GetTimeMillis() - nStart);
     fAddressesInitialized = true;
 
@@ -1845,7 +1845,7 @@ void CNode::Fuzz(int nChance)
 
 CAddrDB::CAddrDB()
 {
-    pathAddr = GetDataDir() / "peers.dat";
+    pathAddr = GetDataDir() / "forked_peers.dat";
 }
 
 bool CAddrDB::Write(const CAddrMan& addr)
@@ -1853,7 +1853,7 @@ bool CAddrDB::Write(const CAddrMan& addr)
     // Generate random temporary filename
     unsigned short randv = 0;
     GetRandBytes((unsigned char*)&randv, sizeof(randv));
-    std::string tmpfn = strprintf("peers.dat.%04x", randv);
+    std::string tmpfn = strprintf("forked_peers.dat.%04x", randv);
 
     // serialize addresses, checksum data up to that point, then append csum
     CDataStream ssPeers(SER_DISK, CLIENT_VERSION);
@@ -1879,7 +1879,7 @@ bool CAddrDB::Write(const CAddrMan& addr)
     FileCommit(fileout.Get());
     fileout.fclose();
 
-    // replace existing peers.dat, if any, with new peers.dat.XXXX
+    // replace existing forked_peers.dat, if any, with new forked_peers.dat.XXXX
     if (!RenameOver(pathTmp, pathAddr))
         return error("%s: Rename-into-place failed", __func__);
 

@@ -105,7 +105,7 @@ public:
 /** Stochastic address manager
  *
  * Design goals:
- *  * Keep the address tables in-memory, and asynchronously dump the entire table to peers.dat.
+ *  * Keep the address tables in-memory, and asynchronously dump the entire table to forked_peers.dat.
  *  * Make sure no (localized) attacker can fill the entire table with his nodes/addresses.
  *
  * To that end:
