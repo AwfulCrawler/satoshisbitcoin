@@ -81,8 +81,8 @@ BOOST_AUTO_TEST_CASE(BigBlockFork_Time1)
     CBlockTemplate *pblocktemplate;
 
     uint64_t t = GetTime();
-    uint64_t preforkSize = MAX_BLOCK_SIZE;
-    uint64_t postforkSize = 2*MAX_BLOCK_SIZE;
+    uint64_t preforkSize = OLD_MAX_BLOCK_SIZE;
+    uint64_t postforkSize = MAX_BLOCK_SIZE;
     uint64_t tActivate = t;
 
     sizeForkTime.store(tActivate);
@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(BigBlockFork_Time2)
     CBlockTemplate *pblocktemplate;
 
     uint64_t t = GetTime();
-    uint64_t preforkSize = MAX_BLOCK_SIZE;
-    uint64_t postforkSize = 2*MAX_BLOCK_SIZE;
+    uint64_t preforkSize = OLD_MAX_BLOCK_SIZE;
+    uint64_t postforkSize = MAX_BLOCK_SIZE;
 
     uint64_t tActivate = t+60*60*24*30;
     sizeForkTime.store(tActivate);
@@ -146,8 +146,8 @@ BOOST_AUTO_TEST_CASE(BigBlockFork_NoActivation)
     CBlockTemplate *pblocktemplate;
 
     uint64_t t = GetTime();
-    uint64_t preforkSize = MAX_BLOCK_SIZE;
-    uint64_t postforkSize = 2*MAX_BLOCK_SIZE;
+    uint64_t preforkSize = OLD_MAX_BLOCK_SIZE;
+    uint64_t postforkSize = MAX_BLOCK_SIZE;
 
     LOCK(cs_main);
 
