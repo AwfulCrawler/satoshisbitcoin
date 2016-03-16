@@ -96,18 +96,32 @@ What work has been completed?
 
 The initial release is work and has been tested to successfully fork off of the main net, switch to a new blocksize and POW and build a new independent chain. The repo was forked from Bitcoin Classic 0.11.2 and all changes can be compared to that version.
 
-- The block height for the fork has been set to 407232
-- The block size post-fork has been set to 2MB (will follow Classic)
-- The difficulty adjustment at the fork point is re-set to a value where a smallish number of nodes would create blocks every 10 minutes. This is needed because the mining hash rate is unknown, by re-setting the hash rate the branch will effectively work with a small amount of hash power and then self adjust to match the real hash rate the market brings. 
-- A new block version needs to be created for the fork. At the fork point only blocks with this version or higher will be accepted and this version tage will be used in block verification to select the new block size and POW. This approach simplifies coding effort. 
-- The new POW algorithm was implemented in the crypto library 
+- Following BIP009 conventions for parallel soft forks, a higher block version byte is used to tag blocks as full fork compatible. Version 0x00000100 (256) is used for the fork.
+- The block height for the fork is set to 407232. At this point only blocks tagged for the full fork are accepted
+- The block size post-fork automatically increases to 2MB (follows Classic)
+- A new DNSSeed server was setup to help forked peers find each other after the fork
+- The difficulty adjustment at the fork point is re-set to a value where the expected number of nodes will create blocks every 10 minutes. This is needed because the mining hash rate is unknown, by re-setting the hash rate the branch will effectively work with a small amount of hash power and then self adjust to match the real hash rate the market brings. 
+- A POW retargeting overflow bug was found and fixed
+- A new modified scrypt POW algorithm was implemented in the crypto library to re-enable CPU mining
 - The new POW algorithm activates at the fork height by using the new version tag to select which algorithm
-- Due to how long the new hash algorithm takes (~1 sec) a caching method was implemented to save previous block hashes. This prevents wasting compute on a hash that was already performed.
+- To improve performance due to how long the new hash algorithm takes (~1 sec / hash), a caching method was implemented to save previous block hashes. 
+- Startup performance issues related to the new POW were fixed 
+- Multiple performance improves were made to the bitcoind miner
+- The band for difficulty adjustments was increased to allow for faster difficulty adjustment in case hash power increases rapidly
+- Informational debug.log messaging was improved to better communicate block rejection after the fork
+- The alert key was update since it has been compromised by Theymos
 
 What work still needs to be done?
 ----------------
 
-The only additional coding work needed is to create mechanisms to change to a new group of peers. After the fork the client needs to both drop peers not following the fork and to find peers using the new fork. This also requires setting up a new CDNSSeedData server to provide seed nodes that followed the fork. 
+All development work is complete. The only items remaining are related to helping people find and use the forked client, including:
+
+- Setup a simple satoshisbitcoin.org website
+- Create installation binaries for people to install
+- Run multiple DNSSeed servers
+- Promote the client 
+
+If you are able and interested in helping with any of this please let me know
 
 After the fork what is the long term roadmap?
 ----------------
