@@ -43,7 +43,7 @@ uint256 CBlockHeader::GetHash(bool useCache, void * V0) const
         LOCK(csHashCache);
         std::map<CBlockHeaderHashKey,uint256>::iterator search = hashCache.find(key);
         if(search != hashCache.end()) {
-            LogPrintf("GetHash(): Cache hit for %s\n", search->second.GetHex().c_str());
+            //LogPrintf("GetHash(): Cache hit for %s\n", search->second.GetHex().c_str());
             return search->second;   // Cache hit
         }
     }
@@ -186,7 +186,7 @@ void ClearBlockHeaderHashCache(void)
 
 void AddToDiskBlockHeaderHashCache(CBlockHeader inBlock, uint256 hash)
 {
-    LogPrintf("GetHash(): Adding %s to disk cache\n", hash.GetHex().c_str());
+    //LogPrintf("GetHash(): Adding %s to disk cache\n", hash.GetHex().c_str());
 
     CBlockHeaderHashKey  inHeader(inBlock);
 
