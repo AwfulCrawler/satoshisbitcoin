@@ -36,7 +36,7 @@ public:
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
         //consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.powLimit = uint256S("0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // A single node will find a block every ~10-15 mintues at this difficulty
+        consensus.powLimit   = uint256S("007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // A single node will find a block every ~10-15 mintues at this difficulty
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nPowTargetSpacing = 10 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
