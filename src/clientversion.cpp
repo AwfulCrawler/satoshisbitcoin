@@ -13,7 +13,7 @@
  * for both bitcoind and bitcoin-classic, to make it harder for attackers to
  * target servers or GUI users specifically.
  */
-const std::string CLIENT_NAME("SatoshisBitcoinFullFork");
+const std::string CLIENT_NAME("SatoshisBitcoinFullFork_PublicTest_At403562");
 
 /**
  * Client version number
