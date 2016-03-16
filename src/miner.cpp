@@ -361,11 +361,15 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nNonce         = 0;
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
-        CValidationState state;
-        if (!TestBlockValidity(state, *pblock, pindexPrev, false, false)) {
-            LogPrintf("CreateNewBlock(): TestBlockValidity failed\n");
-            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
-	}
+        // Checking validity computes a hash that locks cs_main (above) and polutes the cache 
+        //   skip validation, computed blocks are always valid anyway and if the mined block is invalid
+        //   block validation then will flag the error. The alternative is to update multiple functions
+        //   to pass 'do not cache' down through the consensus checking logic....
+        //CValidationState state;
+        //if (!TestBlockValidity(state, *pblock, pindexPrev, false, false)) {
+        //    LogPrintf("CreateNewBlock(): TestBlockValidity failed\n");
+        //    throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+        //}
     }
 
     return pblocktemplate.release();
@@ -575,6 +579,7 @@ void static BitcoinMiner(CWallet *pwallet, int threadNum)
                         LogPrintf("BitcoinMiner %d: Proof-Of-Work Found!!  \n                           hash: %s  \n                           target: %s\n", threadNum, hash.GetHex(), hashTarget.GetHex());
                         ProcessBlockFound(pblock, *pwallet, reservekey);
                         SetThreadPriority(THREAD_PRIORITY_LOWEST);
+                        //AddToDiskBlockHeaderHashCache( *pblock, hash );
 
                         // In regression test mode, stop mining after a block is found.
                         if (chainparams.MineBlocksOnDemand())

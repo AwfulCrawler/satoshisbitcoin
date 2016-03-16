@@ -11,21 +11,24 @@
 #include "crypto/common.h"
 #include "util.h"
 
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
+#include "streams.h"
+#include <stdint.h>
+#include "clientversion.h"
+#include "sync.h"
 
-static std::map<uint256,uint256> hashCache;    // A cache of past modified scrypt hashes performed
+
+static std::map<CBlockHeaderHashKey,uint256> hashCache;    // A cache of past modified scrypt hashes performed
+static CCriticalSection                      csHashCache;
+static CCriticalSection                      csAddToDisk;
 
 
 uint256 CBlockHeader::GetHash(bool useCache, void * V0) const
 {
-    //LogPrintf("GetHash(): nVersion      %d\n", nVersion);
-    //LogPrintf("           hashPrevBlock %llu\n", *((uint64_t *)&hashPrevBlock) );
-    //LogPrintf("           hashMerkleRoot %llu\n", *((uint64_t *)&hashMerkleRoot) );
-    //LogPrintf("           nTime %d\n", nTime);
-    //LogPrintf("           nBits %d\n", nBits);
-    //LogPrintf("           nNonce %d\n", nNonce);
-  
-    uint256 key, returnHash;
-    uint32_t * keyBegin, * hashPrevBlockBegin, * hashMerkleRootBegin;
+    uint256             returnHash;
+
+    CBlockHeaderHashKey key(*this);
   
     // Use SHA256 if block version indicates legacy PoW
     if (nVersion < FULL_FORK_VERSION || nVersion > FULL_FORK_VERSION_MAX) {
@@ -33,28 +36,16 @@ uint256 CBlockHeader::GetHash(bool useCache, void * V0) const
     }
     
     // Use modified scrypt for PoW for versions equal or above the fork version (ignoring alternative fork versions for now)
-    
-    // Due to the long hash runtime and the fact that bitcoind requests the same hash multiple times during a block 
+    //
+    // Due to the long hash runtime and the fact bitcoind requests the same hash multiple times during a block 
     //   validation, cache previous hashes and return the cached result if available
     if( useCache ) {
-      
-        // Build the search key
-        keyBegin            = (uint32_t *)key.begin();
-        hashPrevBlockBegin  = (uint32_t *)hashPrevBlock.begin();
-        hashMerkleRootBegin = (uint32_t *)hashMerkleRoot.begin();
-	for( int i = 0; i < 8; i++ )
-	    keyBegin[i] = hashPrevBlockBegin[i] ^ hashMerkleRootBegin[i]; 
-	keyBegin[0] ^= nVersion;
-	keyBegin[1] ^= nTime;
-	keyBegin[2] ^= nBits;
-	keyBegin[3] ^= nNonce;
-	
-	std::map<uint256,uint256>::iterator search = hashCache.find(key);
+        LOCK(csHashCache);
+        std::map<CBlockHeaderHashKey,uint256>::iterator search = hashCache.find(key);
         if(search != hashCache.end()) {
-	    //LogPrintf("GetHash(): Cache hit for %s\n", search->second.GetHex().c_str());
+            LogPrintf("GetHash(): Cache hit for %s\n", search->second.GetHex().c_str());
             return search->second;   // Cache hit
         }
-	
     }
     
     // No cache hit, compute the hash
@@ -62,11 +53,14 @@ uint256 CBlockHeader::GetHash(bool useCache, void * V0) const
     
     // Store the hash in the cache
     if( useCache ) {
-	//LogPrintf("GetHash(): Adding %s to cache\n", returnHash.GetHex().c_str());
-        hashCache.insert( std::pair<uint256,uint256>(key,returnHash) );
+        {
+            LOCK(csHashCache);
+            LogPrintf("GetHash(): Adding %s to cache\n", returnHash.GetHex().c_str());
+            hashCache.insert( std::pair<CBlockHeaderHashKey,uint256>(key,returnHash) );
+        }
+        AddToDiskBlockHeaderHashCache( *this, returnHash );
     }
     
-    //return HashModifiedScrypt(this);
     return returnHash;
 }
 
@@ -184,3 +178,90 @@ std::string CBlock::ToString() const
     s << "\n";
     return s.str();
 }
+
+void ClearBlockHeaderHashCache(void)
+{
+    hashCache.clear();
+}
+
+void AddToDiskBlockHeaderHashCache(CBlockHeader inBlock, uint256 hash)
+{
+    LogPrintf("GetHash(): Adding %s to disk cache\n", hash.GetHex().c_str());
+
+    CBlockHeaderHashKey  inHeader(inBlock);
+
+    LOCK( csAddToDisk );
+
+    boost::filesystem::path cacheFileName = GetDataDir() / "blocks/hashcache.dat";
+    FILE *file = fopen(cacheFileName.string().c_str(), "ab");
+    CAutoFile fileout(file, SER_DISK, CLIENT_VERSION);
+    if (fileout.IsNull())
+        error("%s: Failed to open file %s", __func__, cacheFileName.string().c_str() );
+    
+    try {
+        fileout << inHeader;
+        fileout << hash;
+    }
+    catch (const std::exception& e) {
+        error("%s: Serialize or I/O error - %s", __func__, e.what());
+    }
+    
+    fileout.fclose();
+}
+
+bool LoadBlockHeaderHashCache()
+{
+    CBlockHeaderHashKey   insertHeader;
+    uint256               insertHash;
+    int64_t               fileSize, numHashes, i;
+  
+    LogPrintf("LoadBlockHeaderHashCache(): Loading hash cache\n");
+    
+    hashCache.clear();
+    
+    boost::filesystem::path cacheFileName = GetDataDir() / "blocks/hashcache.dat";
+    FILE *file = fopen(cacheFileName.string().c_str(), "rb");
+    CAutoFile filein(file, SER_DISK, CLIENT_VERSION);
+    if (filein.IsNull()) {
+        LogPrintf("  No hashcache.dat file to load...\n");
+        return true;
+    }
+
+    fileSize  = boost::filesystem::file_size(cacheFileName);
+    numHashes = fileSize / (sizeof(CBlockHeaderHashKey)+sizeof(uint256));
+
+    if( numHashes <= 0 ) {
+        LogPrintf("  Invalid hashcache.dat filesize of %lld and numHashes of %lld\n", fileSize, numHashes);
+        return false;
+    }
+    
+    if( numHashes * (sizeof(CBlockHeaderHashKey)+sizeof(uint256)) != (uint64_t)fileSize ) {
+        LogPrintf("  Warning: hashcache.dat filesize of %lld not valid, deleting cache and letting it rebuild. numHashes %lld sizeof(CBlockHeaderHashKey)+sizeof(uint256) %d\n", fileSize, numHashes, sizeof(CBlockHeaderHashKey)+sizeof(uint256));
+        filein.fclose();
+
+        file = fopen(cacheFileName.string().c_str(), "wb");
+        CAutoFile filein(file, SER_DISK, CLIENT_VERSION);
+        filein.fclose();
+        return true;
+    }
+    
+    try {
+        for( i = 0; i < numHashes; i++ ) {
+            filein >> insertHeader;
+            filein >> insertHash;
+            hashCache.insert( std::pair<CBlockHeaderHashKey,uint256>(insertHeader,insertHash) );
+        }
+    }
+    
+    catch (const std::exception& e) {
+        error("%s: Deserialize or I/O error - %s - fileSize %lld, numHashes %lld, i %lld", __func__, e.what(), fileSize, numHashes, i);
+        return false;
+    }
+    
+    filein.fclose();
+
+    LogPrintf("LoadBlockHeaderHashCache(): Loaded %lld entries\n", i);
+    return true;
+}
+
+

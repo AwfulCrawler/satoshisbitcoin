@@ -102,7 +102,8 @@ public:
 
     static bool VersionKnown(int32_t nVersion, int32_t voteBits)
     {
-        if (nVersion >= 1 && nVersion <= 5)
+        if ( (nVersion >= 1 && nVersion <= 4) || 
+             (nVersion >= FULL_FORK_VERSION && nVersion < FULL_FORK_VERSION_MAX) )
             return true;
         // BIP009 / versionbits:
         if (nVersion & BIP_009_MASK)
@@ -187,5 +188,67 @@ struct CBlockLocator
         return vHave.empty();
     }
 };
+
+class CBlockHeaderHashKey
+{
+public:
+
+    // header
+    int32_t nVersion;
+    uint256 hashPrevBlock;
+    uint256 hashMerkleRoot;
+    uint32_t nTime;
+    uint32_t nBits;
+    uint32_t nNonce;
+
+    CBlockHeaderHashKey( CBlockHeader inBlock )
+    {
+        nVersion       = inBlock.nVersion;
+        hashPrevBlock  = inBlock.hashPrevBlock;
+        hashMerkleRoot = inBlock.hashMerkleRoot;
+        nTime          = inBlock.nTime;
+        nBits          = inBlock.nBits;
+        nNonce         = inBlock.nNonce;
+    }
+
+    CBlockHeaderHashKey()
+    {
+        SetNull();
+    }
+
+    friend inline bool operator==(const CBlockHeaderHashKey& lhs, const CBlockHeaderHashKey& rhs) { return memcmp(&lhs, &rhs, sizeof(CBlockHeaderHashKey)) == 0; }
+    friend inline bool operator!=(const CBlockHeaderHashKey& lhs, const CBlockHeaderHashKey& rhs) { return memcmp(&lhs, &rhs, sizeof(CBlockHeaderHashKey)) != 0; }
+    friend inline bool operator< (const CBlockHeaderHashKey& lhs, const CBlockHeaderHashKey& rhs) { return memcmp(&lhs, &rhs, sizeof(CBlockHeaderHashKey)) < 0; }    
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(nVersion);
+        READWRITE(hashPrevBlock);
+        READWRITE(hashMerkleRoot);
+        READWRITE(nTime);
+        READWRITE(nBits);
+        READWRITE(nNonce);
+    }
+
+    void SetNull()
+    {
+        nVersion = FULL_FORK_VERSION;
+        hashPrevBlock.SetNull();
+        hashMerkleRoot.SetNull();
+        nTime = 0;
+        nBits = 0;
+        nNonce = 0;
+    }
+
+};
+
+void ClearBlockHeaderHashCache(void);
+
+void AddToDiskBlockHeaderHashCache(CBlockHeader inBlock, uint256 hash);
+
+bool LoadBlockHeaderHashCache();
+
 
 #endif // BITCOIN_PRIMITIVES_BLOCK_H
