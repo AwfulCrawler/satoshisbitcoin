@@ -2869,6 +2869,11 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         return state.Invalid(error("%s : rejected older block.nVersion != 256 after Satoshi's Bitcoin full fork", __func__),
                              REJECT_OBSOLETE, "bad-version");
 
+    // Shutdown the test after a few difficulty adjustments, prevents test chain from continuing
+    if ( (unsigned int)nHeight >= HEIGHT_TO_FULL_FORK_1 + 10000 )
+        return state.Invalid(error("%s : rejecting new blocks after trial period , test is complete, please upgrade to the official launch client", __func__),
+                             REJECT_OBSOLETE, "test-over");
+
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
         return state.DoS(100, error("%s: incorrect proof of work of %08x should be %08x", __func__, block.nBits, GetNextWorkRequired(pindexPrev, &block, consensusParams)),
