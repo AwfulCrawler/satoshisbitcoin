@@ -55,7 +55,7 @@ uint256 CBlockHeader::GetHash(bool useCache, void * V0) const
     if( useCache ) {
         {
             LOCK(csHashCache);
-            LogPrintf("GetHash(): Adding %s to cache\n", returnHash.GetHex().c_str());
+            //LogPrintf("GetHash(): Adding %s to cache\n", returnHash.GetHex().c_str());
             hashCache.insert( std::pair<CBlockHeaderHashKey,uint256>(key,returnHash) );
         }
         AddToDiskBlockHeaderHashCache( *this, returnHash );
