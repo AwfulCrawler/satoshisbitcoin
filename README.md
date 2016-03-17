@@ -1,4 +1,4 @@
-Bitcoin client that full forks to flexible blocksizes
+Bitcoin client that full forks to larger blocksizes
 =====================================
 
 This full fork provides an option for Bitcoin users who want to follow Satoshi’s vision of a global peer-to-peer currency that is accessible and usable by everyone. Currently a large number of Bitcoin users want to use a version of Bitcoin that scales as originally intended, but have no option to do. The project is opt-in and only users who want to follow this new branch will do so, users who prefer to stay on the current branch will not be affected. 
@@ -23,7 +23,7 @@ What is the full fork and what is being changed?
 The full fork will change the set of rules that define the block chain on a fixed date. After this date a new branch will be created that follows a set of rules that more closely follow Satoshi’s vision. At this point there will be two separate branches of the blockchain and two separate Bitcoins. One branch will follow the existing rules and a new branch will follow the new rules. Each individual user will be able to decide for themselves which branch to follow. The transaction history and BTC owned will be common on both branches up through the fork date, and after that diverge. 
 
 The base client used is Bitcoin Classic version 0.11.2. On top of this version the following rule changes will activate at block height 407232, which is the difficulty adjustment scheduled for mid-April 2016. 
-- The block size limit will be removed and replaced with an adjustable limit based on the previous difficulty period’s transaction volume. 
+- The block size limit will be changed to 2MB initially and increased incrementally after that (same as Classic)
 - The POW algorithm will changed 
 
 Note: mid-April 2016 is a target date, the final activation date will depend on development progress which depends on community participation in development as described further below. 
@@ -43,9 +43,7 @@ Yes! Intial coding work is complete and several tests have been performed to dem
 How will the block size limit be changed?
 ----------------
 
-The block size limit will be changed to follow the same mechanism as the difficulty for mining. Currently difficulty auto adjusts every 2 weeks and this adjustment is rate limited to only increase or decrease by a factor of 4. 
-
-The block size limit will similarly be set to auto adjust every 2 weeks based on the previous difficulty period’s transaction volume. The new block size limit for the next difficulty period will be reset to 10 times the previous difficulty period’s transaction volume, the adjustment will also be rate limited to only increase or decrease by a factor of 4. 
+The block size limit will be changed 2MB immediately at the fork point. After that the blocksize will be increased as needed. 
 
 In this manner the block size limit will function as a spam filter only as originally intended, and transaction throughput can grow based on user demand while providing protection against large block spam attacks. 
 
@@ -69,13 +67,13 @@ Which POW will be used?
 
 A modified version of scrypt was created and used. 
 
-The overall goal is to take an existing algorithm, and make minor and easy adjustments that significantly reduce the effectiveness of ASIC or GPU implementations. We should still see specialization happen over time, but the optimal point should still create a more balanced environment. 
+The overall goal is to take the  existing algorithm, and make minor and easy adjustments that significantly reduce the effectiveness of ASIC or GPU implementations. We should still see specialization happen over time, but the optimal point should still create a more balanced environment. 
 
-Based prior experience in creating ASIC and FPGA hardware implementations of existing software algorithms, several characteristics of software algorithms have been identified which are difficult and sub-optimal to implement in hardware, or at least the advantage of a hardware implementation is drastically reduced over a general CPU core. The idea is to start with an existing algorithm and then modify it to have these characterizes. The process and these characteristics are:
+Based prior experience in creating ASIC and FPGA hardware implementations of existing software algorithms, several characteristics of software algorithms have been identified which are difficult and sub-optimal to implement in hardware, or at least the advantage of a hardware implementation is drastically reduced over a general CPU core. The idea is to start with scrypt and then modify it to have these characterizes. The process and these characteristics are:
 
 - Start with the scrypt algorithm as a base starting point
 
-The goal of scrypt is to force off-chip communication by using more data than can fit onto a single chip. The problem with the Litecoin implementation is the data size selected was much too small and it was possible to develop ASIC cores that required no off-chip communication. 
+The goal of scrypt is to force off-chip communication by using more data than can fit onto a single chip. The problem with the Litecoin implementation is the data size selected was much too small and it was possible to develop ASIC cores that required no off-chip communication and GPUs had enough on-chip memory.
 
 - Select 128MB as an initial data set size for scrypt 
 
